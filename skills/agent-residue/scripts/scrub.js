@@ -23,6 +23,7 @@ import { pickSources } from './scan.js';
 
 const LIVE_MS = 15 * 60 * 1000;
 const JSONL_KINDS = new Set(['transcript', 'history', 'rollout', 'jsonl']);
+const SNAPSHOT_KINDS = new Set(['shell', 'snapshot']);
 
 // Raw lines, keeping the exact line ending: { text, eol }.
 export async function* rawLines(file) {
@@ -98,10 +99,13 @@ export async function runScrub({ flags, env, out, err }) {
   const sources = pickSources(ids, flags.path || null);
   const apply = !!flags.apply, low = !!flags['include-low'];
   const cutoff = flags.since ? Date.now() - Number(flags.since) * 86400000 : 0;
-  const total = { files: 0, changedFiles: 0, lines: 0, unsafe: 0, skippedLive: 0, skipped: [], secrets: new Map() };
+  const total = { files: 0, changedFiles: 0, lines: 0, unsafe: 0, skippedLive: 0, snapshotsSkipped: 0, skipped: [], secrets: new Map() };
   for (const { def } of sources) {
     for (const f of def.files(env).filter(x => !cutoff || x.mtime >= cutoff)) {
       if (def.skipFile && def.skipFile(f)) continue;
+      // A shell snapshot is sourced before every command of a running (or resumed) session, and file-history files are rewind checkpoints:
+      // replacing a secret in either would break the shell's credentials or write the replacement token into the user's real file on rewind.
+      if (SNAPSHOT_KINDS.has(f.kind) && !flags['include-snapshots']) { total.snapshotsSkipped++; continue; }
       total.files++;
       if (Date.now() - f.mtime < LIVE_MS && !flags.force) { total.skippedLive++; continue; }
       const r = await scrubFile(f, { apply, low, backupDir: flags['backup-dir'] || null });
@@ -113,6 +117,8 @@ export async function runScrub({ flags, env, out, err }) {
   const byType = [...total.secrets.values()].reduce((m, t) => (m[t] = (m[t] || 0) + 1, m), {});
   out(`agent-residue scrub ${apply ? '' : '(dry run) '} ·  ${total.secrets.size} distinct secrets on ${total.lines} lines in ${total.changedFiles} of ${total.files} files${apply ? ' replaced' : ' would be replaced'}  ·  values are never printed`);
   if (Object.keys(byType).length) out('  ' + Object.entries(byType).map(([t, n]) => `${t} ${n}`).join(' · '));
+  if (total.snapshotsSkipped) out(`  ${total.snapshotsSkipped} snapshot files left alone: shell snapshots are sourced by running sessions (a scrubbed one would hand the shell a placeholder instead of a credential) and file-history files are rewind checkpoints (a rewind would write the placeholder into your real file). --include-snapshots rewrites them anyway.`);
+  if (flags['include-snapshots'] && apply) out('  Snapshots were included: restart any session that is still using a scrubbed shell snapshot, and do not rewind past a scrubbed file-history checkpoint.');
   if (total.skippedLive) out(`  ${total.skippedLive} files modified in the last 15 minutes were skipped (probably live). --force includes them.`);
   if (total.skipped.length) out(`  ${total.skipped.length} files skipped: ${[...new Set(total.skipped)].join('; ')}`);
   if (total.unsafe) out(`  ${total.unsafe} lines were left unchanged because a safe replacement could not be proven (unusual escaping).`);

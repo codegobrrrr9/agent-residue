@@ -65,9 +65,12 @@ export function commandHead(cmd) {
   if (/^(?:\.env[A-Za-z0-9._-]{0,12}|[a-z][a-z-]{1,15})$/.test(second) && detect(second).length === 0) out += ' ' + second;
   return out;
 }
+// A path that looks like a test, fixture or mock: a secret found only in such files is probably a made-up value (a fixture the agent wrote).
+const TESTY = /(?:^|[\\/])(?:tests?|__tests__|specs?|fixtures?|mocks?|__mocks__)[\\/]|\.(?:test|spec)\.[a-z]+$|fixture|mock/i;
 function fileClass(p) {
   const b = basename(String(p || '')).toLowerCase();
   if (/^\.env/.test(b) || /\.env$/.test(b)) return '.env';
+  if (TESTY.test(String(p || ''))) return 'test file';
   if (/credential|secret|token|\.pem$|\.key$|id_rsa|\.p12$|\.pfx$|kubeconfig|\.npmrc|\.netrc/.test(b)) return 'credentials file';
   return 'file';
 }

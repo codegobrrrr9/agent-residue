@@ -46,8 +46,14 @@ report. This is the part that tells you what to change.
 Dry run by default. `--apply` replaces each secret with `[residue:<type>:<fingerprint>]` on the raw line using the JSON-escaped form of the value, then re-parses
 the line and re-runs detection: if the line is not valid JSON, or a value is still decodable from it, the **original line is kept** and counted as unsafe. The file
 is written to a temp file and renamed only if its size and modification time are unchanged since it was read; a refused rename (Windows locks open files) skips the
-file. Files modified in the last 15 minutes are skipped without `--force`. No backup by default, because a backup keeps the secret. The original modification time
+file. Files modified in the last 15 minutes are skipped without `--force`. **Shell snapshots and file-history checkpoints are not touched unless `--include-snapshots`:** a running or resumed session sources its shell snapshot before every command, and rewinding restores file-history into the user's real files, so replacing a secret in either would break the shell or plant the placeholder in the project. No backup by default, because a backup keeps the secret. The original modification time
 is restored, so Claude Code's retention clock is unchanged. Scrub does not rewrite claude-mem databases or `.zst` files in v0.1.
+
+## Fixtures
+
+An agent that writes tests makes up keys. A finding whose every occurrence is in a test, spec, fixture or mock file the agent wrote or read (cause `... test file`) is
+flagged `fixtureOnly`: counted on its own line, left out of the headline and of the `seen` file. It is still scrubbed. A real key pasted into a test file by mistake looks
+the same, which is why it is shown, not hidden.
 
 ## Retention
 

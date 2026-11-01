@@ -32,7 +32,7 @@ export function pickSources(ids, extraPath = null) {
 export async function scan({ sources, since = null, low = true, env = process.env, memory = null } = {}) {
   const agg = new Map();
   const stats = {};
-  const sessionsAll = new Set();
+  const sessionsAll = new Set(), sessionsReal = new Set();
   const cutoff = since ? Date.now() - since * 86400000 : 0;
   let registered = 0;
 
@@ -46,7 +46,7 @@ export async function scan({ sources, since = null, low = true, env = process.en
       if (!fp) continue;
       if (!d.placeholder && d.tier !== 'low' && registered < 5000) { registerSecret(value); registered++; }
       let a = agg.get(fp);
-      if (!a) { a = { fp, type: d.type, tier: d.tier, placeholder: d.placeholder, length: value.length, places: 0, sessions: new Set(), files: new Set(), first: null, last: null, causes: new Map(), names: new Set(), sourceIds: new Set(), affectedMtimes: [] }; agg.set(fp, a); }
+      if (!a) { a = { fp, type: d.type, tier: d.tier, placeholder: d.placeholder, length: value.length, places: 0, sessions: new Set(), files: new Set(), first: null, last: null, causes: new Map(), names: new Set(), sourceIds: new Set(), oldest: null, outsideTests: 0 }; agg.set(fp, a); }
       a.places++; a.sessions.add(rec.session); a.files.add(f.file); a.sourceIds.add(rec.source);
       const when = rec.date || null;
       if (when && (!a.first || when < a.first)) a.first = when;
@@ -54,7 +54,9 @@ export async function scan({ sources, since = null, low = true, env = process.en
       const ck = causeKey(entry);
       a.causes.set(ck, (a.causes.get(ck) || 0) + 1);
       if (d.name) a.names.add(d.name);
-      if (!d.placeholder) { sessionsAll.add(rec.session); a.affectedMtimes.push(f.mtime); }
+      if (!/test file/.test(entry.cause)) a.outsideTests++;                          // seen anywhere other than in a test file the agent wrote or read
+      if (!d.placeholder && !/test file/.test(entry.cause)) sessionsReal.add(rec.session);
+      if (!d.placeholder) { sessionsAll.add(rec.session); a.oldest = a.oldest === null ? f.mtime : Math.min(a.oldest, f.mtime); }   // a running minimum: a spread over a huge array throws
     }
   };
 
@@ -88,10 +90,10 @@ export async function scan({ sources, since = null, low = true, env = process.en
   const findings = [...agg.values()].map(a => ({
     fp: a.fp, type: a.type, tier: a.tier, placeholder: a.placeholder, length: a.length, places: a.places, sessions: a.sessions.size, files: a.files.size,
     first: a.first, last: a.last, causes: Object.fromEntries([...a.causes.entries()].sort((x, y) => y[1] - x[1])), names: [...a.names].slice(0, 8), sources: [...a.sourceIds],
-    oldestFile: a.affectedMtimes.length ? Math.min(...a.affectedMtimes) : null,
+    oldestFile: a.oldest, fixtureOnly: a.outsideTests === 0,
   })).sort((a, b) => (a.placeholder - b.placeholder) || ({ high: 0, medium: 1, low: 2 }[a.tier] - { high: 0, medium: 1, low: 2 }[b.tier]) || b.places - a.places);
 
-  return { generatedAt: new Date().toISOString(), since, low, stats, findings, sessionsAffected: sessionsAll.size, retention: retention(env, findings) };
+  return { generatedAt: new Date().toISOString(), since, low, stats, findings, sessionsAffected: sessionsAll.size, sessionsOutsideTests: sessionsReal.size, retention: retention(env, findings) };
 }
 
 // Claude Code deletes transcripts older than cleanupPeriodDays (30 by default per its docs) at startup. The value `0` is not confirmed
@@ -109,15 +111,20 @@ export function retention(env, findings) {
   return { cleanupPeriodDays: days, source, zeroUnverified: days === 0, oldestAffectedDate: oldest ? new Date(oldest).toISOString().slice(0, 10) : null, oldestAffectedAgeDays: oldest ? Math.floor((Date.now() - oldest) / 86400000) : null };
 }
 
+// A secret seen only in test files the agent wrote or read is probably a fixture the agent made up, not a credential. It is counted on its own line,
+// never in the headline, so the split is visible before any number is quoted.
 export function summarize(result) {
-  const real = result.findings.filter(f => !f.placeholder);
+  const nonPlaceholder = result.findings.filter(f => !f.placeholder);
+  const real = nonPlaceholder.filter(f => !f.fixtureOnly);
+  const fixtures = nonPlaceholder.filter(f => f.fixtureOnly);
   const by = (tier) => real.filter(f => f.tier === tier);
   const causes = new Map();
   for (const f of real) for (const [k, n] of Object.entries(f.causes)) causes.set(k, (causes.get(k) || 0) + n);
   return {
     distinct: { high: by('high').length, medium: by('medium').length, low: by('low').length, placeholders: result.findings.filter(f => f.placeholder).length },
+    fixtureOnly: { high: fixtures.filter(f => f.tier === 'high').length, medium: fixtures.filter(f => f.tier === 'medium').length, low: fixtures.filter(f => f.tier === 'low').length },
     places: { high: by('high').reduce((n, f) => n + f.places, 0), medium: by('medium').reduce((n, f) => n + f.places, 0), low: by('low').reduce((n, f) => n + f.places, 0) },
-    sessionsAffected: result.sessionsAffected,
+    sessionsAffected: result.sessionsOutsideTests ?? result.sessionsAffected,
     topCauses: [...causes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8),
     types: Object.entries(real.reduce((m, f) => (m[f.type] = (m[f.type] || 0) + 1, m), {})).sort((a, b) => b[1] - a[1]),
   };

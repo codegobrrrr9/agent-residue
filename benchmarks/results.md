@@ -3,6 +3,10 @@
 Method and metrics were fixed before the run: [PREREGISTRATION.md](PREREGISTRATION.md). Raw numbers: `results.first.json`, `results.second.json`.
 Positives are generated at run time from a seed (nothing key-shaped is committed); public negatives are pinned URLs fetched into `work/` (`negatives.json`, `negatives.lock.json`).
 
+**A mismatch in the pre-registration text.** PREREGISTRATION.md says 18 templates and 108 positive cases; `corpus.js` has 19 templates (the `curl -v`
+shape is two templates, one for an Anthropic key and one for an OpenAI key) and 114 cases. The pre-registration was not edited: `corpus.js` as committed in
+`0b07f94` is the registration, and the numbers below use it.
+
 ## First run (the headline)
 
 | Metric | Result |

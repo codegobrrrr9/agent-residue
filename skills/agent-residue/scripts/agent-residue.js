@@ -42,7 +42,9 @@ function printScan(r, flags) {
   for (const [id, st] of Object.entries(r.stats)) {
     out(`  ${id.padEnd(12)} ${st.files} files, ${mb(st.bytes)}, ${st.lines} lines${st.badLines ? `, ${st.badLines} unreadable lines` : ''}${st.skipped ? `, ${st.skipped} skipped` : ''}${st.oldest ? `  (${day(st.oldest)} to ${day(st.newest)})` : ''}${st.unverified ? '  [adapter unverified: see references/platforms.md]' : ''}${st.note ? '  ' + st.note : ''}`);
   }
-  const real = r.findings.filter(f => !f.placeholder);
+  const real = r.findings.filter(f => !f.placeholder && !f.fixtureOnly);
+  const fx = s.fixtureOnly.high + s.fixtureOnly.medium + s.fixtureOnly.low;
+  if (fx) out(`  + ${fx} more (${s.fixtureOnly.high} high, ${s.fixtureOnly.medium} medium, ${s.fixtureOnly.low} low) seen only in test files the agent wrote or read: probably fixtures it made up, not credentials. Not counted above.`);
   for (const f of real.slice(0, Number(flags.top) || 25)) {
     out(`\n${f.tier.padEnd(6)} ${f.type.padEnd(22)} fp ${f.fp}  len ${f.length}  ${f.places} place${f.places === 1 ? '' : 's'} in ${f.sessions} session${f.sessions === 1 ? '' : 's'}  ${f.first ? f.first.slice(0, 10) : ''} → ${f.last ? f.last.slice(0, 10) : ''}${f.names.length ? '  names: ' + f.names.join(', ') : ''}`);
     out('       how it got there: ' + Object.entries(f.causes).slice(0, 4).map(([k, n]) => `${k} (${n})`).join(', '));
@@ -86,7 +88,7 @@ export async function main(argv) {
 
   if (cmd === 'seen') {
     const { buildSeen } = await import('./seen.js');
-    const seen = buildSeen(r, { includeLow: !!f['include-low'] });
+    const seen = buildSeen(r, { includeLow: !!f['include-low'], includeFixtures: !!f['include-fixtures'] });
     const text = JSON.stringify(seen, null, 2);
     if (f.out) { writeFileSync(resolve(f.out), text + '\n'); out(`${seen.items.length} fingerprints written to ${f.out} (no values)`); } else out(text);
     return 0;

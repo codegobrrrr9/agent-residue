@@ -162,3 +162,36 @@ test('codex rollouts compressed with zstd (.jsonl.zst) are read; scrub reports t
   const s = await scrubFile({ file: f, kind: 'rollout', mtime: 1 }, { apply: true, low: false });
   assert.match(s.skipped, /compressed/);
 });
+
+test('a secret seen only in test files the agent wrote or read is a fixture: counted on its own line, never in the headline, left out of the seen file', async () => {
+  const fixture = K.stripe(91), real = K.github(92);
+  writeTranscript(iso, 'proj-fx', 'session-fx', [
+    toolUse('w1', 'Write', { file_path: '/work/app/tests/billing.test.js', content: `const KEY = '${fixture}'` }),
+    toolResult('w1', 'File created'),
+    toolUse('r1', 'Read', { file_path: '/work/app/tests/billing.test.js' }),
+    toolResult('r1', `const KEY = '${fixture}'`),
+    toolUse('b1', 'Bash', { command: 'printenv' }), toolResult('b1', `GITHUB_TOKEN=${real}`),
+  ], '2026-10-29T12:00:00Z');
+  const r = await scan({ sources: cc() });
+  const fx = r.findings.find(f => f.type === 'stripe_key' && f.causes['typed into Write test file'] === 1 && f.causes['output of Read test file'] === 1);
+  assert.ok(fx && fx.fixtureOnly === true, 'the fixture is attributed to the test file');
+  assert.equal(r.findings.find(f => f.type === 'github_token' && f.causes['output of printenv']).fixtureOnly, false);
+  const s = summarize(r);
+  assert.ok(s.fixtureOnly.high >= 1);
+  const { buildSeen } = await import('../skills/agent-residue/scripts/seen.js');
+  assert.ok(!buildSeen(r).items.some(i => i.fp === fx.fp), 'a fixture is not handed to apikeys-handler');
+  assert.ok(buildSeen(r, { includeFixtures: true }).items.some(i => i.fp === fx.fp));
+  const cli = await runCli(['scan']);
+  assert.match(cli.all, /seen only in test files the agent wrote or read/);
+  assert.ok(!cli.all.includes(fixture) && !cli.all.includes(real));
+});
+
+test('a secret with a very large number of places does not throw (running minimum, no spread over a huge array)', async () => {
+  const k = K.openai(95);
+  const lines = []; for (let i = 0; i < 150000; i++) lines.push(JSON.stringify({ type: 'user', message: { role: 'user', content: 'x ' + k } }) + '\n');
+  const { mkdtempSync } = await import('node:fs');
+  const dir = mkdtempSync(join(iso.root, 'big-')); writeFileSync(join(dir, 'many.jsonl'), lines.join(''));
+  const r = await scan({ sources: pickSources(['path'], dir) });
+  const f = r.findings.find(x => x.type === 'openai_key');
+  assert.equal(f.places, 150000); assert.ok(f.oldestFile > 0);
+});

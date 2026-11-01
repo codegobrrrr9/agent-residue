@@ -122,3 +122,20 @@ test('rawLines keeps line endings and a final line with no newline', async () =>
   const got = []; for await (const l of rawLines(file)) got.push(l);
   assert.deepEqual(got, [{ text: 'a', eol: '\n' }, { text: 'b', eol: '\r\n' }, { text: 'c', eol: '' }]);
 });
+
+test('by default scrub leaves shell snapshots and file-history checkpoints alone (a running shell and a rewind depend on them); --include-snapshots rewrites them and says what that costs', async () => {
+  const k = K.google(151), k2 = K.npm(152);
+  const { mkdirSync } = await import('node:fs');
+  const sh = join(iso.claude, 'shell-snapshots', 'snapshot-live.sh'), fh = join(iso.claude, 'file-history', 'zz', 'chk@v1');
+  mkdirSync(join(iso.claude, 'shell-snapshots'), { recursive: true }); mkdirSync(join(iso.claude, 'file-history', 'zz'), { recursive: true });
+  writeFileSync(sh, `export GOOGLE_API_KEY=${k}\n`); writeFileSync(fh, `NPM_TOKEN=${k2}\n`);
+  for (const f of [sh, fh]) utimesSync(f, new Date(OLD), new Date(OLD));
+  const shBefore = readFileSync(sh), fhBefore = readFileSync(fh);
+  const def = await runCli(['scrub', '--apply']);
+  assert.deepEqual(readFileSync(sh), shBefore); assert.deepEqual(readFileSync(fh), fhBefore);
+  assert.match(def.all, /snapshot files left alone/); assert.match(def.all, /placeholder instead of a credential/);
+  const inc = await runCli(['scrub', '--apply', '--include-snapshots']);
+  assert.ok(!readFileSync(sh, 'utf8').includes(k) && !readFileSync(fh, 'utf8').includes(k2));
+  assert.match(inc.all, /restart any session that is still using a scrubbed shell snapshot/);
+  for (const v of [k, k2]) assert.ok(!def.all.includes(v) && !inc.all.includes(v));
+});

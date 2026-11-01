@@ -34,7 +34,7 @@ After installing, say: `agent-residue on. I will not read your session logs myse
 3. **Scan first, scrub only on a yes.** `scrub` is a dry run by default. Say that scrubbing removes the local copy only: the provider already received
    what the agent printed, so the secrets still need rotating.
 4. **Rotate before you scrub:** `agent-residue seen --out seen.json`, then `apikeys-handler scan --seen seen.json`.
-5. **Do not scrub live sessions** (the tool skips files changed in the last 15 minutes; do not add `--force` unless asked).
+5. **Do not scrub live sessions** (the tool skips files changed in the last 15 minutes; do not add `--force` unless asked), and leave shell snapshots and file-history alone (no `--include-snapshots` unless asked).
 6. If secrets came from `Read .env` / `cat .env`, show the suggested deny rule and ask before editing any settings file.
 7. Say which sources were read. claude-mem and Codex support are unverified until run on a real install.
 

@@ -23,7 +23,9 @@ scrubs the local copy, and tells apikeys-handler which secrets to rotate first. 
 3. **Scan first, scrub only on a yes.** `scrub` is a dry run by default. Ask before `--apply`, and say what it does and does not do: it removes the
    local copy only. The provider already received what the agent printed, so the secrets still have to be rotated.
 4. **Rotate before you scrub.** Hand the list to apikeys-handler (`agent-residue seen --out seen.json`, then `apikeys-handler scan --seen seen.json`).
-5. **Do not scrub live sessions.** The tool skips files modified in the last 15 minutes; do not pass `--force` unless the user asks.
+5. **Do not scrub live sessions.** The tool skips files modified in the last 15 minutes; do not pass `--force` unless the user asks. Shell snapshots and file-history
+   checkpoints are left alone by default (a running shell sources its snapshot; a rewind restores file-history into real files): do not add `--include-snapshots` unless
+   the user asks, and then tell them to restart sessions and not rewind past those files.
 6. **Say what was not looked at.** Only the sources listed in the output were read. claude-mem and Codex support are marked unverified until run on a real install.
 7. If the cause report says secrets came from `Read .env` or `cat .env`, show the suggested deny rule and ask before editing any settings file.
 
