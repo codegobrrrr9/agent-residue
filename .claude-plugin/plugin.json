@@ -1,0 +1,10 @@
+{
+  "name": "agent-residue",
+  "version": "0.1.0",
+  "description": "Find the secrets your coding agent has seen and kept in session logs and memory, see what put them there, scrub them, and tell apikeys-handler what to rotate first. Never prints or stores a value.",
+  "author": { "name": "codegobrrrr9", "url": "https://github.com/codegobrrrr9" },
+  "homepage": "https://github.com/codegobrrrr9/agent-residue",
+  "repository": "https://github.com/codegobrrrr9/agent-residue",
+  "license": "MIT",
+  "keywords": ["secrets", "agent-logs", "privacy", "secret-scanning", "claude-code"]
+}

@@ -1,0 +1,50 @@
+{
+ "next-pnpm-lock": {
+  "sha256": "35cad0c51236ffdd2027f1ed82a7c767086eca7851bae18bd0108f33924fc401",
+  "bytes": 1366688
+ },
+ "cargo-lock": {
+  "sha256": "f394b1d1e68c7f7cd11261b1623493c3da407a88f0f50519a403c339b750b5c7",
+  "bytes": 130516
+ },
+ "k8s-go-sum": {
+  "sha256": "50b854d4183743fbd1f2a94187449289ab7b01d7ae800f4ce73ce95e02cb32b8",
+  "bytes": 45906
+ },
+ "jquery-min": {
+  "sha256": "fc9a93dd241f6b045cbff0481cf4e1901becd0e12fb45166a8f17f95823f0b1a",
+  "bytes": 87533
+ },
+ "lodash-min": {
+  "sha256": "a9705dfc47c0763380d851ab1801be6f76019f6b67e40e9b873f8b4a0603f7a9",
+  "bytes": 73015
+ },
+ "react-dom-min": {
+  "sha256": "35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d",
+  "bytes": 131835
+ },
+ "bootstrap-bundle-min": {
+  "sha256": "0833b2e9c3a26c258476c46266e6877fc75218625162e0460be9a3a098a61c6c",
+  "bytes": 80721
+ },
+ "d3-min": {
+  "sha256": "f2094bbf6141b359722c4fe454eb6c4b0f0e42cc10cc7af921fc158fceb86539",
+  "bytes": 279706
+ },
+ "openai-python-readme": {
+  "sha256": "ab56b5251f4de836518c8f175dbd6c6a4dbc7eb809b3abe96a8e019233533dea",
+  "bytes": 43144
+ },
+ "stripe-node-readme": {
+  "sha256": "c84db64901e40ce8c98f2ee90c3e972e682caa3c5bcb61f67578a657f497cc51",
+  "bytes": 27105
+ },
+ "aws-cli-readme": {
+  "sha256": "afaeae45c44a3fe9dad2abf2057ef32089e36d3a6ac9dbdbb5f8ed331a3c43d8",
+  "bytes": 18125
+ },
+ "supabase-readme": {
+  "sha256": "82793d79c85c3e0ee0e3860eb75e9b8f0f8f85f09d26b0681bd41e78f6e3c490",
+  "bytes": 16839
+ }
+}

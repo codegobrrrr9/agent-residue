@@ -1,0 +1,6 @@
+{
+  "name": "agent-residue",
+  "version": "0.1.0",
+  "description": "Find the secrets your coding agent has seen and kept in session logs and memory. Never prints or stores a value.",
+  "contextFileName": "AGENTS.md"
+}

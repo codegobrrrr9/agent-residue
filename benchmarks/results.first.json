@@ -1,0 +1,201 @@
+{
+ "label": "first",
+ "cases": 114,
+ "negatives": 60,
+ "recall": {
+  "high": {
+   "planted": 96,
+   "found": 89,
+   "pct": 92.7,
+   "misses": [
+    {
+     "case": "p14-3",
+     "kind": "url query",
+     "type": "google_api_key"
+    },
+    {
+     "case": "p15-0",
+     "kind": "telegram",
+     "type": "telegram_bot_token"
+    },
+    {
+     "case": "p15-1",
+     "kind": "telegram",
+     "type": "telegram_bot_token"
+    },
+    {
+     "case": "p15-2",
+     "kind": "telegram",
+     "type": "telegram_bot_token"
+    },
+    {
+     "case": "p15-3",
+     "kind": "telegram",
+     "type": "telegram_bot_token"
+    },
+    {
+     "case": "p15-4",
+     "kind": "telegram",
+     "type": "telegram_bot_token"
+    },
+    {
+     "case": "p15-5",
+     "kind": "telegram",
+     "type": "telegram_bot_token"
+    }
+   ]
+  },
+  "medium": {
+   "planted": 24,
+   "found": 24,
+   "pct": 100,
+   "misses": []
+  },
+  "low": {
+   "planted": 30,
+   "found": 24,
+   "pct": 80,
+   "misses": [
+    {
+     "case": "p10-0",
+     "kind": "yaml",
+     "type": "named_secret"
+    },
+    {
+     "case": "p10-1",
+     "kind": "yaml",
+     "type": "named_secret"
+    },
+    {
+     "case": "p10-2",
+     "kind": "yaml",
+     "type": "named_secret"
+    },
+    {
+     "case": "p10-3",
+     "kind": "yaml",
+     "type": "named_secret"
+    },
+    {
+     "case": "p10-4",
+     "kind": "yaml",
+     "type": "named_secret"
+    },
+    {
+     "case": "p10-5",
+     "kind": "yaml",
+     "type": "named_secret"
+    }
+   ]
+  },
+  "combined": {
+   "planted": 150,
+   "found": 137,
+   "pct": 91.3
+  },
+  "withDesignMisses": {
+   "planted": 168,
+   "found": 137,
+   "pct": 81.5
+  },
+  "designMisses": {
+   "planted": 18,
+   "found": 0
+  }
+ },
+ "extraFindingsInPositives": {
+  "total": 6,
+  "perCase": 0.05,
+  "byKind": {
+   "git remote -v": 6
+  }
+ },
+ "falsePositives": {
+  "generatedNegatives": {
+   "high": 0,
+   "medium": 0,
+   "low": 0
+  },
+  "generatedNegativesList": [],
+  "publicNegatives": [
+   {
+    "id": "next-pnpm-lock",
+    "kind": "lockfile",
+    "bytes": 1366676,
+    "hits": []
+   },
+   {
+    "id": "cargo-lock",
+    "kind": "lockfile",
+    "bytes": 130516,
+    "hits": []
+   },
+   {
+    "id": "k8s-go-sum",
+    "kind": "lockfile",
+    "bytes": 45906,
+    "hits": []
+   },
+   {
+    "id": "jquery-min",
+    "kind": "minified bundle",
+    "bytes": 87533,
+    "hits": []
+   },
+   {
+    "id": "lodash-min",
+    "kind": "minified bundle",
+    "bytes": 73015,
+    "hits": []
+   },
+   {
+    "id": "react-dom-min",
+    "kind": "minified bundle",
+    "bytes": 131835,
+    "hits": []
+   },
+   {
+    "id": "bootstrap-bundle-min",
+    "kind": "minified bundle",
+    "bytes": 80721,
+    "hits": []
+   },
+   {
+    "id": "d3-min",
+    "kind": "minified bundle",
+    "bytes": 279703,
+    "hits": []
+   },
+   {
+    "id": "openai-python-readme",
+    "kind": "docs with example keys",
+    "bytes": 43144,
+    "hits": []
+   },
+   {
+    "id": "stripe-node-readme",
+    "kind": "docs with example keys",
+    "bytes": 27095,
+    "hits": []
+   },
+   {
+    "id": "aws-cli-readme",
+    "kind": "docs with example keys",
+    "bytes": 18125,
+    "hits": []
+   },
+   {
+    "id": "supabase-readme",
+    "kind": "docs with example keys",
+    "bytes": 16664,
+    "hits": []
+   }
+  ],
+  "publicHitsHighMedium": 0,
+  "publicHitsAll": 0,
+  "publicPerMBHighMedium": 0,
+  "publicPerMBAll": 0,
+  "publicMB": 2.3
+ },
+ "throughputMBps": 55.4
+}

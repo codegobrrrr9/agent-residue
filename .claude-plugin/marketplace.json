@@ -1,0 +1,18 @@
+{
+  "name": "agent-residue",
+  "owner": { "name": "codegobrrrr9", "url": "https://github.com/codegobrrrr9" },
+  "metadata": { "description": "Find the secrets your coding agent has seen and kept.", "version": "0.1.0" },
+  "plugins": [
+    {
+      "name": "agent-residue",
+      "source": "./",
+      "description": "Scans Claude Code and Codex session logs and claude-mem memory for secrets, says which tool call put them there, scrubs them safely and hands the list to apikeys-handler. Adds /agent-residue.",
+      "version": "0.1.0",
+      "author": { "name": "codegobrrrr9" },
+      "homepage": "https://github.com/codegobrrrr9/agent-residue",
+      "license": "MIT",
+      "keywords": ["secrets", "agent-logs", "privacy"],
+      "category": "security"
+    }
+  ]
+}
