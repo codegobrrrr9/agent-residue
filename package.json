@@ -1,0 +1,12 @@
+{
+  "name": "agent-residue",
+  "version": "0.1.0",
+  "description": "Find the secrets your coding agent has seen and kept: Claude Code and Codex session logs, claude-mem memory. Says where they came from, scrubs them safely, and tells apikeys-handler what to rotate first. Never prints or stores a value.",
+  "type": "module",
+  "bin": { "agent-residue": "./skills/agent-residue/scripts/agent-residue.js" },
+  "scripts": { "test": "node --test tests/*.test.js" },
+  "repository": { "type": "git", "url": "https://github.com/codegobrrrr9/agent-residue" },
+  "keywords": ["secrets", "agent-logs", "claude-code", "codex", "claude-mem", "secret-scanning", "privacy", "claude-skills", "agent-skills"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}
