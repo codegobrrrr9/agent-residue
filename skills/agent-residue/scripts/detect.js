@@ -73,6 +73,7 @@ export function detect(text, { low = true } = {}) {
     for (const m of t.matchAll(p.re)) {
       const value = m[p.group];
       if (typeof value !== 'string' || !value) continue;
+      if (value.includes('[residue:')) continue;           // our own replacement token is never a finding (scrub must be idempotent)
       const [start, end] = m.indices[p.group];
       const rec = { type: p.type, tier: p.tier, start, end, placeholder: false, name: null };
       if (p.type === 'named_secret') {

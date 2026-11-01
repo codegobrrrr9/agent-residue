@@ -146,3 +146,19 @@ test('claude-mem: a fixture database built from the published schema is scanned 
   assert.ok(r.stats['claude-mem'].unverified);
   assert.ok(!JSON.stringify(r).includes(k));
 });
+
+test('codex rollouts compressed with zstd (.jsonl.zst) are read; scrub reports them as scan-only', async () => {
+  const zlib = (await import('node:zlib')).default;
+  if (typeof zlib.zstdCompressSync !== 'function') return;                       // older Node: the adapter reports the file as skipped
+  const k = K.openai(81);
+  const dir = join(iso.codex, 'sessions', '2026', '11', '01'); mkdirSync(dir, { recursive: true });
+  const f = join(dir, 'rollout-2026-11-01T10-00-00-abc.jsonl.zst');
+  writeFileSync(f, zlib.zstdCompressSync(Buffer.from(line({ ordinal: 1, payload: { content: [{ type: 'text', text: 'export KEY=' + k }], encrypted_content: K.stripe(82) } }))));
+  const r = await scan({ sources: pickSources(['codex']) });
+  const hit = r.findings.find(x => x.type === 'openai_key' && x.sources.includes('codex'));
+  assert.ok(hit, 'found inside the compressed file');
+  assert.ok(!r.findings.some(x => x.type === 'stripe_key' && x.sources.includes('codex')), 'opaque encrypted_content is not scanned');
+  const { scrubFile } = await import('../skills/agent-residue/scripts/scrub.js');
+  const s = await scrubFile({ file: f, kind: 'rollout', mtime: 1 }, { apply: true, low: false });
+  assert.match(s.skipped, /compressed/);
+});

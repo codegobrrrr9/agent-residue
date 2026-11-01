@@ -10,6 +10,7 @@
 // Credential stores are never read: Codex auth.json, Claude Code's credentials file.
 
 import { createReadStream, readdirSync, statSync, openSync, readSync, closeSync } from 'node:fs';
+import zlib from 'node:zlib';
 import { join, basename, extname } from 'node:path';
 import { createInterface } from 'node:readline';
 import { roots, guard } from './paths.js';
@@ -19,9 +20,13 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024;     // a transcript can be large;
 const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;        // file-history snapshots are read whole-line by line but capped
 const NEVER = /(?:^|[\\/])(?:auth\.json|\.credentials\.json|credentials\.json|\.netrc)$/i;
 
+// Codex 0.x writes rollouts as .jsonl.zst (zstd). Node 22.15+ and 23.8+ can read them; older Node reports the file as skipped.
 export async function* readLines(file) {
   guard(file);
-  const rl = createInterface({ input: createReadStream(file, { encoding: 'utf8' }), crlfDelay: Infinity });
+  let input = createReadStream(file);
+  if (file.endsWith('.zst')) { if (typeof zlib.createZstdDecompress !== 'function') throw new Error('zstd needs Node 22.15 or newer'); input = input.pipe(zlib.createZstdDecompress()); }
+  input.setEncoding('utf8');
+  const rl = createInterface({ input, crlfDelay: Infinity });
   let n = 0;
   for await (const text of rl) { n++; yield { n, text }; }
 }
@@ -76,11 +81,11 @@ export function causeOf(name, input) {
   return String(name || 'tool').slice(0, 60);
 }
 
-function* strings(value, depth = 0) {
+export function* strings(value, depth = 0) {
   if (typeof value === 'string') { yield value; return; }
   if (depth > 8 || value === null || typeof value !== 'object') return;
   if (Array.isArray(value)) { for (const v of value) yield* strings(v, depth + 1); return; }
-  for (const v of Object.values(value)) yield* strings(v, depth + 1);
+  for (const [k, v] of Object.entries(value)) { if (k === 'encrypted_content') continue; yield* strings(v, depth + 1); }
 }
 
 // One Claude Code transcript line -> entries.
@@ -110,7 +115,7 @@ export function claudeEntries(o, toolById) {
 
 async function* jsonlRecords(file, source, mapEntries, mtime) {
   const toolById = new Map();
-  const session = basename(file, '.jsonl');
+  const session = basename(file).replace(/\.jsonl(?:\.zst)?$/, '');
   for await (const { n, text } of readLines(file)) {
     if (!text) continue;
     let o;
@@ -147,7 +152,7 @@ export const SOURCES = {
     label: 'Codex session rollouts',
     where: (env) => roots(env).codex,
     files(env) {
-      return walk(join(roots(env).codex, 'sessions'), { filter: (p) => p.endsWith('.jsonl') }).map(f => ({ ...f, kind: 'rollout' }));
+      return walk(join(roots(env).codex, 'sessions'), { filter: (p) => p.endsWith('.jsonl') || p.endsWith('.jsonl.zst') }).map(f => ({ ...f, kind: 'rollout' }));
     },
     records(f) { return jsonlRecords(f.file, 'codex', (o) => [...strings(o)].map(text => ({ role: 'codex log', cause: 'codex', text })), f.mtime); },
   },

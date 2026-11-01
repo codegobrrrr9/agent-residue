@@ -1,0 +1,17 @@
+{
+  "note": "Public files with no intended secret, pinned. Fetched into benchmarks/work/ by fetch.js, never committed. A hit is reviewed (type and line only); a real leaked key means the file is dropped and the drop is listed.",
+  "files": [
+    { "id": "next-pnpm-lock", "kind": "lockfile", "url": "https://raw.githubusercontent.com/vercel/next.js/3bccd4df910c984ca60f796e50b8d43db3227162/pnpm-lock.yaml" },
+    { "id": "cargo-lock", "kind": "lockfile", "url": "https://raw.githubusercontent.com/rust-lang/cargo/809bcc525b6169903fc41aa861a2029ab7388381/Cargo.lock" },
+    { "id": "k8s-go-sum", "kind": "lockfile", "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/aa8de068063335aee4a78589ee0d5c70b448e266/go.sum" },
+    { "id": "jquery-min", "kind": "minified bundle", "url": "https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" },
+    { "id": "lodash-min", "kind": "minified bundle", "url": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js" },
+    { "id": "react-dom-min", "kind": "minified bundle", "url": "https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" },
+    { "id": "bootstrap-bundle-min", "kind": "minified bundle", "url": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" },
+    { "id": "d3-min", "kind": "minified bundle", "url": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" },
+    { "id": "openai-python-readme", "kind": "docs with example keys", "url": "https://raw.githubusercontent.com/openai/openai-python/190dd5aee1053dd2093d2a5c3937f604860310a3/README.md" },
+    { "id": "stripe-node-readme", "kind": "docs with example keys", "url": "https://raw.githubusercontent.com/stripe/stripe-node/6d5ed967d602224ac3056dc3f0befbb55487ee50/README.md" },
+    { "id": "aws-cli-readme", "kind": "docs with example keys", "url": "https://raw.githubusercontent.com/aws/aws-cli/3953cea5610c6f7fccb88bf066e2097bdd60767f/README.rst" },
+    { "id": "supabase-readme", "kind": "docs with example keys", "url": "https://raw.githubusercontent.com/supabase/supabase/a05e7ec1d79e67cba65e3871b7caf105db27f8b1/README.md" }
+  ]
+}
