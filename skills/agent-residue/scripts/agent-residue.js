@@ -10,7 +10,7 @@
 import { realpathSync, writeFileSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { redact } from './shared.js';
+import { redact, localDay } from './shared.js';
 import { roots } from './paths.js';
 import { SOURCES } from './sources.js';
 import { scan, summarize, pickSources } from './scan.js';
@@ -29,7 +29,7 @@ export function parseArgs(argv) {
 }
 const list = (v) => (typeof v === 'string' ? v.split(',').map(s => s.trim()).filter(Boolean) : null);
 const mb = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.ceil(n / 1e3) + ' KB';
-const day = (ms) => (ms ? new Date(ms).toISOString().slice(0, 10) : 'n/a');
+const day = (ms) => (ms ? localDay(ms) : 'n/a');
 
 export function sourceIds(flags) {
   const ids = list(flags.source) || (flags.path ? ['path'] : ['claude-code', 'codex', 'claude-mem']);
@@ -46,7 +46,7 @@ function printScan(r, flags) {
   const fx = s.fixtureOnly.high + s.fixtureOnly.medium + s.fixtureOnly.low;
   if (fx) out(`  + ${fx} more (${s.fixtureOnly.high} high, ${s.fixtureOnly.medium} medium, ${s.fixtureOnly.low} low) seen only in test files the agent wrote or read: probably fixtures it made up, not credentials. Not counted above.`);
   for (const f of real.slice(0, Number(flags.top) || 25)) {
-    out(`\n${f.tier.padEnd(6)} ${f.type.padEnd(22)} fp ${f.fp}  len ${f.length}  ${f.places} place${f.places === 1 ? '' : 's'} in ${f.sessions} session${f.sessions === 1 ? '' : 's'}  ${f.first ? f.first.slice(0, 10) : ''} → ${f.last ? f.last.slice(0, 10) : ''}${f.names.length ? '  names: ' + f.names.join(', ') : ''}`);
+    out(`\n${f.tier.padEnd(6)} ${f.type.padEnd(22)} fp ${f.fp}  len ${f.length}  ${f.places} place${f.places === 1 ? '' : 's'} in ${f.sessions} session${f.sessions === 1 ? '' : 's'}  ${localDay(f.first)} → ${localDay(f.last)}${f.names.length ? '  names: ' + f.names.join(', ') : ''}`);
     out('       how it got there: ' + Object.entries(f.causes).slice(0, 4).map(([k, n]) => `${k} (${n})`).join(', '));
   }
   if (real.length > (Number(flags.top) || 25)) out(`\n… ${real.length - (Number(flags.top) || 25)} more (use --top N, or --json)`);
@@ -90,6 +90,8 @@ export async function main(argv) {
   if (cmd === 'seen') {
     const { buildSeen } = await import('./seen.js');
     const seen = buildSeen(r, { includeLow: !!f['include-low'], includeFixtures: !!f['include-fixtures'] });
+    const heldLow = f['include-low'] ? [] : r.findings.filter(x => !x.placeholder && !x.fixtureOnly && x.tier === 'low');
+    if (heldLow.length) err(`note: ${heldLow.length} low-tier finding${heldLow.length === 1 ? ' is' : 's are'} not in this file (named assignments and entropy matches are the least certain)${heldLow.some(x => x.names && x.names.length) ? ': ' + [...new Set(heldLow.flatMap(x => x.names || []))].slice(0, 8).join(', ') : ''}. Add --include-low to hand them to apikeys-handler too.`);
     const text = JSON.stringify(seen, null, 2);
     if (f.out) { writeFileSync(resolve(f.out), text + '\n'); out(`${seen.items.length} fingerprints written to ${f.out} (no values)`); } else out(text);
     return 0;

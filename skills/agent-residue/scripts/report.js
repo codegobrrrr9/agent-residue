@@ -1,8 +1,9 @@
 // A markdown report of a scan. Types, counts, causes and fingerprints: never a value.
 
 import { summarize } from './scan.js';
+import { localDay } from './shared.js';
 
-const day = (ms) => (ms ? new Date(ms).toISOString().slice(0, 10) : 'n/a');
+const day = (ms) => (ms ? localDay(ms) : 'n/a');
 
 export function reportMarkdown(r) {
   const s = summarize(r), real = r.findings.filter(f => !f.placeholder);
@@ -11,7 +12,7 @@ export function reportMarkdown(r) {
   L.push('## Sources', '', '| Source | Files | Lines | Unreadable lines | Date range |', '|---|---|---|---|---|');
   for (const [id, st] of Object.entries(r.stats)) L.push(`| ${id}${st.unverified ? ' (unverified adapter)' : ''} | ${st.files} | ${st.lines} | ${st.badLines} | ${day(st.oldest)} to ${day(st.newest)} |`);
   L.push('', '## Findings', '', '| Tier | Type | Fingerprint | Length | Places | Sessions | First | Last | How it got there |', '|---|---|---|---|---|---|---|---|---|');
-  for (const f of real) L.push(`| ${f.tier} | ${f.type} | ${f.fp} | ${f.length} | ${f.places} | ${f.sessions} | ${(f.first || '').slice(0, 10)} | ${(f.last || '').slice(0, 10)} | ${Object.entries(f.causes).slice(0, 3).map(([k, n]) => `${k} (${n})`).join('; ').replace(/\|/g, '/')} |`);
+  for (const f of real) L.push(`| ${f.tier} | ${f.type} | ${f.fp} | ${f.length} | ${f.places} | ${f.sessions} | ${localDay(f.first)} | ${localDay(f.last)} | ${Object.entries(f.causes).slice(0, 3).map(([k, n]) => `${k} (${n})`).join('; ').replace(/\|/g, '/')} |`);
   if (!real.length) L.push('| none | | | | | | | | |');
   L.push('', '## Where they came from', '');
   for (const [k, n] of s.topCauses) L.push(`- ${n} × ${k}`);

@@ -45,3 +45,12 @@ export function safeParse(text, where) {
   try { return { ok: true, value: JSON.parse(text) }; }
   catch { return { ok: false, error: `unparseable JSON at ${where}` }; }
 }
+
+// Calendar day in the machine's own time zone (not UTC), so a log written at 8 pm Eastern is not reported as tomorrow.
+export function localDay(v) {
+  if (v === null || v === undefined || v === '') return '';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}

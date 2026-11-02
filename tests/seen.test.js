@@ -45,3 +45,11 @@ test('hand-off: apikeys-handler marks the variable whose value the agent has see
   assert.ok(!/OTHER_SECRET_KEY.*SEEN BY AGENT/.test(r.all), 'a secret the agent never saw is not marked');
   for (const v of [stripe, dbpw, untouched]) assert.ok(!r.all.includes(v));
 });
+
+test('localDay reports the machine\'s calendar day, not UTC', async () => {
+  const { localDay } = await import('../skills/agent-residue/scripts/shared.js');
+  const d = new Date(2026, 10, 1, 21, 30);                                              // 9:30 pm local, whatever the zone
+  assert.equal(localDay(d.toISOString()), '2026-11-01');
+  assert.equal(localDay(d.getTime()), '2026-11-01');
+  assert.equal(localDay(''), ''); assert.equal(localDay('not a date'), '');
+});

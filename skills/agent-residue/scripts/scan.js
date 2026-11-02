@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { detect, MAX_SCAN } from './detect.js';
-import { fingerprint, registerSecret, safeParse } from './shared.js';
+import { fingerprint, registerSecret, safeParse, localDay } from './shared.js';
 import { roots, guard } from './paths.js';
 import { SOURCES, pathSource } from './sources.js';
 
@@ -114,7 +114,7 @@ export function retention(env, findings) {
   // Claude Code's cleanup does not apply to other agents' files: report their oldest affected file separately, with no retention claim
   const others = findings.filter(f => !f.placeholder && f.oldestOther);
   const oldestOther = others.length ? Math.min(...others.map(f => f.oldestOther)) : null;
-  return { oldestOtherDate: oldestOther ? new Date(oldestOther).toISOString().slice(0, 10) : null, oldestOtherAgeDays: oldestOther ? Math.floor((Date.now() - oldestOther) / 86400000) : null, cleanupPeriodDays: days, source, zeroUnverified: days === 0, oldestAffectedDate: oldest ? new Date(oldest).toISOString().slice(0, 10) : null, oldestAffectedAgeDays: oldest ? Math.floor((Date.now() - oldest) / 86400000) : null };
+  return { oldestOtherDate: oldestOther ? localDay(oldestOther) : null, oldestOtherAgeDays: oldestOther ? Math.floor((Date.now() - oldestOther) / 86400000) : null, cleanupPeriodDays: days, source, zeroUnverified: days === 0, oldestAffectedDate: oldest ? localDay(oldest) : null, oldestAffectedAgeDays: oldest ? Math.floor((Date.now() - oldest) / 86400000) : null };
 }
 
 // A secret seen only in test files the agent wrote or read is probably a fixture the agent made up, not a credential. It is counted on its own line,
