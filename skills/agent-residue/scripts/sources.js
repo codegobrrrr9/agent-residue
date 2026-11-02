@@ -66,7 +66,7 @@ export function commandHead(cmd) {
   return out;
 }
 // A path that looks like a test, fixture or mock: a secret found only in such files is probably a made-up value (a fixture the agent wrote).
-const TESTY = /(?:^|[\\/])(?:tests?|__tests__|specs?|fixtures?|mocks?|__mocks__)[\\/]|\.(?:test|spec)\.[a-z]+$|fixture|mock/i;
+const TESTY = /(?:^|[\s"'\\/])(?:tests?|__tests__|specs?|fixtures?|mocks?|__mocks__)[\\/]|\.(?:test|spec)\.[a-z]+$|fixture|mock/i;
 function fileClass(p) {
   const b = basename(String(p || '')).toLowerCase();
   if (/^\.env/.test(b) || /\.env$/.test(b)) return '.env';
@@ -76,7 +76,8 @@ function fileClass(p) {
 }
 export function causeOf(name, input) {
   const i = input && typeof input === 'object' ? input : {};
-  if (name === 'Bash' || name === 'PowerShell') return commandHead(i.command);
+  // `cat > tests/x.test.js <<EOF` writes a fixture through the shell: the command text names a test path, so say so (the head alone is just "cat")
+  if (name === 'Bash' || name === 'PowerShell') { const head = commandHead(i.command); return typeof i.command === 'string' && TESTY.test(i.command) ? head + ' on a test file' : head; }
   if (name === 'Read') return 'Read ' + fileClass(i.file_path);
   if (name === 'Write' || name === 'Edit' || name === 'MultiEdit' || name === 'NotebookEdit') return 'Write ' + fileClass(i.file_path || i.notebook_path);
   if (name === 'Grep' || name === 'Glob') return name;

@@ -16,7 +16,7 @@ export function reportMarkdown(r) {
   L.push('', '## Where they came from', '');
   for (const [k, n] of s.topCauses) L.push(`- ${n} × ${k}`);
   const rt = r.retention;
-  L.push('', '## Retention', '', `Claude Code keeps session logs ${rt.cleanupPeriodDays} days (${rt.source}). ${rt.oldestAffectedDate ? `The oldest affected file is ${rt.oldestAffectedAgeDays} days old (${rt.oldestAffectedDate}).` : 'No affected file.'}`);
+  L.push('', '## Retention', '', `Claude Code keeps session logs ${rt.cleanupPeriodDays} days (${rt.source}). ${rt.oldestAffectedDate ? `The oldest affected Claude Code file is ${rt.oldestAffectedAgeDays} days old (${rt.oldestAffectedDate}).` : 'No affected Claude Code file.'}${rt.oldestOtherDate ? ` Other sources: the oldest affected file is ${rt.oldestOtherAgeDays} days old (${rt.oldestOtherDate}); Claude Code's cleanup does not cover them.` : ''}`);
   L.push('', '## What this does not change', '', '- Scrubbing a log removes the local copy only. Anything the agent printed was already sent to your model provider: rotate the secrets (apikeys-handler), then scrub.', '- Low-confidence findings (a secret-looking name with a high-entropy value) are the least reliable tier.', '- Only the sources listed above were read.');
   return L.join('\n') + '\n';
 }

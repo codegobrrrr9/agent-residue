@@ -58,6 +58,7 @@ function printScan(r, flags) {
   if (denies.length) out(`\nSuggestion, not applied: in .claude/settings.json add  "permissions": { "deny": [${denies.join(', ')}] }  so the agent cannot read these files. (cat and printenv still work: they need a hook or a habit.)`);
   const rt = r.retention;
   if (rt.oldestAffectedDate) out(`\nRetention: Claude Code keeps session logs ${rt.cleanupPeriodDays} days (${rt.source}); the oldest affected file is ${rt.oldestAffectedAgeDays} days old (${rt.oldestAffectedDate}).${rt.zeroUnverified ? ' A value of 0 is not documented officially: check before relying on it.' : ''}`);
+  if (rt.oldestOtherDate) out(`${rt.oldestAffectedDate ? '' : '\n'}Other sources (Codex, claude-mem, folders): the oldest affected file is ${rt.oldestOtherAgeDays} days old (${rt.oldestOtherDate}). Claude Code's ${rt.cleanupPeriodDays}-day cleanup does not cover them; check how long that tool keeps its files.`);
   out('\nScrubbing a log removes the local copy only. Whatever the agent printed was sent to your model provider when it printed it: rotate the secrets (apikeys-handler), then scrub.');
   if (!real.length) out('\nNo secrets found in these sources.');
 }

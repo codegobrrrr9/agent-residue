@@ -46,7 +46,7 @@ export async function scan({ sources, since = null, low = true, env = process.en
       if (!fp) continue;
       if (!d.placeholder && d.tier !== 'low' && registered < 5000) { registerSecret(value); registered++; }
       let a = agg.get(fp);
-      if (!a) { a = { fp, type: d.type, tier: d.tier, placeholder: d.placeholder, length: value.length, places: 0, sessions: new Set(), files: new Set(), first: null, last: null, causes: new Map(), names: new Set(), sourceIds: new Set(), oldest: null, outsideTests: 0 }; agg.set(fp, a); }
+      if (!a) { a = { fp, type: d.type, tier: d.tier, placeholder: d.placeholder, length: value.length, places: 0, sessions: new Set(), files: new Set(), first: null, last: null, causes: new Map(), names: new Set(), sourceIds: new Set(), oldest: null, outsideTests: 0, testPlaces: 0 }; agg.set(fp, a); }
       a.places++; a.sessions.add(rec.session); a.files.add(f.file); a.sourceIds.add(rec.source);
       const when = rec.date || null;
       if (when && (!a.first || when < a.first)) a.first = when;
@@ -54,9 +54,12 @@ export async function scan({ sources, since = null, low = true, env = process.en
       const ck = causeKey(entry);
       a.causes.set(ck, (a.causes.get(ck) || 0) + 1);
       if (d.name) a.names.add(d.name);
-      if (!/test file/.test(entry.cause)) a.outsideTests++;                          // seen anywhere other than in a test file the agent wrote or read
+      // A file snapshot is a copy of a file the agent edited, so it says nothing about where the value came from: it neither makes a finding a
+      // fixture nor stops one being a fixture. A finding is a fixture only if it appears in test files and nowhere else.
+      const isTest = /test file/.test(entry.cause), isSnap = entry.role === 'file snapshot';
+      if (isTest) a.testPlaces++; else if (!isSnap) a.outsideTests++;
       if (!d.placeholder && !/test file/.test(entry.cause)) sessionsReal.add(rec.session);
-      if (!d.placeholder) { sessionsAll.add(rec.session); a.oldest = a.oldest === null ? f.mtime : Math.min(a.oldest, f.mtime); }   // a running minimum: a spread over a huge array throws
+      if (!d.placeholder) { sessionsAll.add(rec.session); if (rec.source === 'claude-code') a.oldest = a.oldest === null ? f.mtime : Math.min(a.oldest, f.mtime); else a.oldestOther = a.oldestOther === undefined ? f.mtime : Math.min(a.oldestOther, f.mtime); }   // a running minimum: a spread over a huge array throws
     }
   };
 
@@ -90,7 +93,7 @@ export async function scan({ sources, since = null, low = true, env = process.en
   const findings = [...agg.values()].map(a => ({
     fp: a.fp, type: a.type, tier: a.tier, placeholder: a.placeholder, length: a.length, places: a.places, sessions: a.sessions.size, files: a.files.size,
     first: a.first, last: a.last, causes: Object.fromEntries([...a.causes.entries()].sort((x, y) => y[1] - x[1])), names: [...a.names].slice(0, 8), sources: [...a.sourceIds],
-    oldestFile: a.oldest, fixtureOnly: a.outsideTests === 0,
+    oldestFile: a.oldest, oldestOther: a.oldestOther ?? null, fixtureOnly: a.testPlaces > 0 && a.outsideTests === 0,
   })).sort((a, b) => (a.placeholder - b.placeholder) || ({ high: 0, medium: 1, low: 2 }[a.tier] - { high: 0, medium: 1, low: 2 }[b.tier]) || b.places - a.places);
 
   return { generatedAt: new Date().toISOString(), since, low, stats, findings, sessionsAffected: sessionsAll.size, sessionsOutsideTests: sessionsReal.size, retention: retention(env, findings) };
@@ -108,7 +111,10 @@ export function retention(env, findings) {
   if (days === null) days = 30;
   const real = findings.filter(f => !f.placeholder && f.oldestFile);
   const oldest = real.length ? Math.min(...real.map(f => f.oldestFile)) : null;
-  return { cleanupPeriodDays: days, source, zeroUnverified: days === 0, oldestAffectedDate: oldest ? new Date(oldest).toISOString().slice(0, 10) : null, oldestAffectedAgeDays: oldest ? Math.floor((Date.now() - oldest) / 86400000) : null };
+  // Claude Code's cleanup does not apply to other agents' files: report their oldest affected file separately, with no retention claim
+  const others = findings.filter(f => !f.placeholder && f.oldestOther);
+  const oldestOther = others.length ? Math.min(...others.map(f => f.oldestOther)) : null;
+  return { oldestOtherDate: oldestOther ? new Date(oldestOther).toISOString().slice(0, 10) : null, oldestOtherAgeDays: oldestOther ? Math.floor((Date.now() - oldestOther) / 86400000) : null, cleanupPeriodDays: days, source, zeroUnverified: days === 0, oldestAffectedDate: oldest ? new Date(oldest).toISOString().slice(0, 10) : null, oldestAffectedAgeDays: oldest ? Math.floor((Date.now() - oldest) / 86400000) : null };
 }
 
 // A secret seen only in test files the agent wrote or read is probably a fixture the agent made up, not a credential. It is counted on its own line,

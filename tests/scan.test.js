@@ -193,5 +193,18 @@ test('a secret with a very large number of places does not throw (running minimu
   const dir = mkdtempSync(join(iso.root, 'big-')); writeFileSync(join(dir, 'many.jsonl'), lines.join(''));
   const r = await scan({ sources: pickSources(['path'], dir) });
   const f = r.findings.find(x => x.type === 'openai_key');
-  assert.equal(f.places, 150000); assert.ok(f.oldestFile > 0);
+  assert.equal(f.places, 150000); assert.ok(f.oldestOther > 0, "the running minimum is kept for sources other than Claude Code");
+});
+
+test('fixtures written through the shell (cat > tests/x.test.js) are attributed; a snapshot copy neither makes a finding a fixture nor stops it being one; a lone snapshot is not a fixture', async () => {
+  const fx = K.stripe(97), lone = K.github(98);
+  writeTranscript(iso, 'proj-fx2', 'session-fx2', [toolUse('c1', 'Bash', { command: `cat > tests/pay.test.js <<'EOF'\nconst k = '${fx}'\nEOF` }), toolResult('c1', '')], '2026-10-29T12:00:00Z');
+  mkdirSync(join(iso.claude, 'file-history', 'qq'), { recursive: true });
+  writeFileSync(join(iso.claude, 'file-history', 'qq', 'aaaa@v1'), `const k = '${fx}'\n`);
+  writeFileSync(join(iso.claude, 'file-history', 'qq', 'bbbb@v1'), `TOKEN=${lone}\n`);
+  const r = await scan({ sources: cc() });
+  const a = r.findings.find(f => f.type === 'stripe_key' && f.causes['typed into cat on a test file'] === 1);
+  assert.ok(a, 'attributed to a test file'); assert.equal(a.fixtureOnly, true, 'the snapshot copy does not stop it being a fixture');
+  const b = r.findings.find(f => f.type === 'github_token' && f.causes['file snapshot'] === 1);
+  assert.ok(b); assert.equal(b.fixtureOnly, false, 'a secret seen only in a snapshot is never assumed to be a fixture');
 });
